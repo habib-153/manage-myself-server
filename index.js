@@ -52,8 +52,19 @@ async function run() {
         next();
       });
     };
-
     // -----------------------------
+    app.post("/tasks", verifyToken, async (req, res) => {
+      const task = req.body;
+      const result = await tasksCollection.insertOne(task);
+      res.send(result);
+    });
+
+    app.get("/to-do/:email", verifyToken, async (req, res) => {
+      const query = { email: req.params.email, status: "to-do" };
+      console.log(query);
+      const result = await tasksCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
