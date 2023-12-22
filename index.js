@@ -29,40 +29,107 @@ async function run() {
 
     // -------------------------------
     // jwt api's
-    app.post("/jwt", async (req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1h",
-      });
-      res.send({ token });
-    });
+    // app.post("/jwt", async (req, res) => {
+    //   const user = req.body;
+    //   console.log(user)
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    //     expiresIn: "1h",
+    //   });
+    //   res.send({ token });
+    // });
 
     // middlewares
-    const verifyToken = (req, res, next) => {
-      console.log(req.headers);
-      if (!req.headers.authorization) {
-        return res.status(401).send({ message: "forbidden" });
-      }
-      const token = req.headers.authorization.split(" ")[1];
-      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-          return res.status(401).send({ message: "forbidden" });
-        }
-        req.decoded = decoded;
-        next();
-      });
-    };
+    // const verifyToken = (req, res, next) => {
+    //   console.log(req.headers);
+    //   if (!req.headers.authorization) {
+    //     return res.status(401).send({ message: "forbidden" });
+    //   }
+    //   const token = req.headers.authorization.split(" ")[1];
+    //   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    //     if (err) {
+    //       return res.status(401).send({ message: "forbidden" });
+    //     }
+    //     req.decoded = decoded;
+    //     next();
+    //   });
+    // };
     // -----------------------------
-    app.post("/tasks", verifyToken, async (req, res) => {
+    app.post("/tasks", async (req, res) => {
       const task = req.body;
       const result = await tasksCollection.insertOne(task);
       res.send(result);
     });
 
-    app.get("/to-do/:email", verifyToken, async (req, res) => {
+    app.get("/task/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await tasksCollection.findOne(query)
+      res.send(result);
+    });
+
+    app.patch("/task/:id", async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          title: item.title,
+          description: item.description,
+          email: item.email,
+          deadline: item.deadline,
+          priority: item.priority,
+          status: item.status
+        },
+      };
+      const result = await tasksCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.patch("/task/:id", async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          title: item.title,
+          description: item.description,
+          email: item.email,
+          deadline: item.deadline,
+          priority: item.priority,
+          status: item.status
+        },
+      };
+      const result = await tasksCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.get("/ongoing/:email", async (req, res) => {
+      const query = { email: req.params.email, status: "ongoing" };
+      console.log(query);
+      const result = await tasksCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/completed/:email", async (req, res) => {
+      const query = { email: req.params.email, status: "completed" };
+      console.log(query);
+      const result = await tasksCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/to-do/:email", async (req, res) => {
       const query = { email: req.params.email, status: "to-do" };
       console.log(query);
       const result = await tasksCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/task/:id", async (req, res) => {
+      const id = req.params.id;
+      // const query = { _id: id}
+      const query = { _id: new ObjectId(id) };
+      console.log(query);
+      const result = await tasksCollection.deleteOne(query);
       res.send(result);
     });
 
