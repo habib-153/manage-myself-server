@@ -6,14 +6,6 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 app.use(cors())
-// app.use(cors({
-//   origin:[
-//     // "https://manage-myself-aecc5.web.app",
-//     'http://localhost:5173',
-//   ],
-//   credentials: true
-// }));
-
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -118,6 +110,23 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/tasks/:email',async (req,res)=>{
+      const email = req.params.email
+
+      const todoQuery = {email: email, status: "to-do"}
+      const ongoingQuery = {email: email, status: "ongoing"}
+      const completedQuery = {email: email, status: "completed"}
+
+      const tasks = {
+        todo: await tasksCollection.find(todoQuery).toArray(),
+        ongoing: await tasksCollection.find(ongoingQuery).toArray(),
+        completed: await tasksCollection.find(completedQuery).toArray()
+      }
+      // const result = await tasksCollection.find(query).toArray()
+      
+      res.send(tasks)
+    })
+
     app.get("/completed/:email", async (req, res) => {
       const query = { email: req.params.email, status: "completed" };
       console.log(query);
@@ -138,6 +147,17 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       console.log(query);
       const result = await tasksCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.put("/task/updateStatus/:id", async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: { status },
+      };
+      const result = await tasksCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
 
